@@ -1,0 +1,20 @@
+Parameter for the examples
+E-n22-k4.evrp
+
+
+
+Ant colony optimization
+ALPHA: 
+BETA:
+Q:
+RO:
+TAUMAX:
+Genetic Algorithm
+Annealing Algorithm
+
+
+
+
+
+
+
