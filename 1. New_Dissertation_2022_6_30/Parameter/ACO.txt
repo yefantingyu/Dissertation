@@ -1,0 +1,31 @@
+Max_trails: 20
+
+
+
+
+E-n22-k4.evrp
+num_of_ants: 6
+alpha_ACO: 1
+beta_ACO: 2
+q: 80
+ro: 0.1
+taumax: 2
+alpha_SA: 1000
+beta_SA: 0.333333
+t_current: 1.0
+t_end: 0.02
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,4 @@
+Max_trails: 20
+restart_ratio: 0.35
+
+E-n22-k4.evrp
