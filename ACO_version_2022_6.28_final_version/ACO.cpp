@@ -51,7 +51,7 @@ SACO::~SACO () {
 }
 
 void SACO::init (int _r) {
-	Ants.resize(NUMBEROFANTS );
+	Ants.resize(NUMBEROFANTS);
 	CITIES 			= new double*[problemt->ACTUAL_PROBLEM_SIZE];
 	PHEROMONES 		= new double*[problemt->ACTUAL_PROBLEM_SIZE];
 	DELTAPHEROMONES = new double*[problemt->ACTUAL_PROBLEM_SIZE];
