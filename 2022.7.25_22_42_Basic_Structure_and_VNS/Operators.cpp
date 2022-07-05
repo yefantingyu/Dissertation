@@ -1,16 +1,13 @@
-#include <iostream>
-#include <algorithm>
 #include "Operators.hpp"
-#include <assert.h>
-#include <random>
-#define EPS 1e-9
 
 using namespace std;
+#define EPS 1e-9
+// Problem* problem = Problem::getInstance();
 
 /*
  * Performs the twoString swap, given that the indices i, j and substring lengths X, Y are valid.
  */
-bool Operators::twoStringMove(vector<int> &tour, int i, int j, int X, int Y) {
+bool twoStringMove(vector<int> &tour, int i, int j, int X, int Y) {
     // Invalid input for some inserts when X = 1, Y = 1 or vice versa
     if ((X == 0 || Y == 0) && i == j) {
         return false;
@@ -47,7 +44,7 @@ bool Operators::twoStringMove(vector<int> &tour, int i, int j, int X, int Y) {
  * Attempts to perform twoString for all possible indices i and j, given the substring lengths X and Y.
  * Returns true if the tour is improved (best improvement).
  */
-bool Operators::twoString(vector<int> &tour, int X, int Y, bool firstImprove) {
+bool twoString(vector<int> &tour, int X, int Y, bool firstImprove) {
 //    cout << "2string" << endl;
     vector<int> tmpTour;
     vector<int> bestTour;
@@ -57,17 +54,18 @@ bool Operators::twoString(vector<int> &tour, int X, int Y, bool firstImprove) {
     double impBest = EPS;
     bool improved = false;
     for (int i = 0; i < tour.size() - X; ++i) {
-        if (problem->get_evals() > problem->STOP_CNT or (firstImprove and improved)) break;
+        if (get_evals() >STOP_CNT or (firstImprove and improved)) break;
         for (int j = (X == Y) ? i + X : 0; j < tour.size() - Y; ++j) {
-            if (problem->get_evals() > problem->STOP_CNT or (firstImprove and improved)) break;
+            if (get_evals() >STOP_CNT or (firstImprove and improved)) break;
             bool cond1 = i + X == j and (X == 0 or Y == 0);
             bool cond2 = j + Y == i and (X == 0 or Y == 0);
             if (not cond1 and not cond2 and ((j - i >= X) || (i - j >= Y))) {
+
                 auto impCurr = j < i ? twoStringCostUpdate(tour, j, i, Y, X) : twoStringCostUpdate(tour, i, j, X, Y);
                 if (impCurr > impBest) {
                     tmpTour = tour;
                     twoStringMove(tmpTour, i, j, X, Y);
-                    if (problem->isValidTour(tmpTour)) {
+                    if (isValidTour(tmpTour)) {
                         impBest = impCurr;
                         bestTour = tmpTour;
                         improved = true;
@@ -87,31 +85,31 @@ bool Operators::twoString(vector<int> &tour, int X, int Y, bool firstImprove) {
  * Returns tour fitness difference after performing twoStringMove(tour, i, j, X, Y).
  * Positive value means fitness improvement.
  */
-double Operators::twoStringCostUpdate(vector<int> &tour, int i, int j, int X, int Y) {
+double twoStringCostUpdate(vector<int> &tour, int i, int j, int X, int Y) {
     auto last = tour.size() - 1;
 
     // Evaluate cost of removed edges
-    double cut1 = problem->get_distance(tour[i], tour[i+1]); // cut after i
-    double cut2 = X != 0 ? problem->get_distance(tour[i + X], tour[i + X + 1]) : 0; // cut after i + X
-    double cut3 = (j != last and j != i + X) ? problem->get_distance(tour[j], tour[j + 1]) : 0; // cut after j
-    double cut4 = (Y != 0 and j + Y != last) ? problem->get_distance(tour[j + Y], tour[j + Y + 1]) : 0; // cut after j + Y
+    double cut1 = get_distance(tour[i], tour[i+1]); // cut after i
+    double cut2 = X != 0 ? get_distance(tour[i + X], tour[i + X + 1]) : 0; // cut after i + X
+    double cut3 = (j != last and j != i + X) ? get_distance(tour[j], tour[j + 1]) : 0; // cut after j
+    double cut4 = (Y != 0 and j + Y != last) ? get_distance(tour[j + Y], tour[j + Y + 1]) : 0; // cut after j + Y
 
     double removed = cut1 + cut2 + cut3 + cut4;
 
     // Evaluate cost of added edges
-    double add1 = Y != 0 ? problem->get_distance(tour[i], tour[j + 1]) : problem->get_distance(tour[i], tour[i + X + 1]); // edge added after i
+    double add1 = Y != 0 ? get_distance(tour[i], tour[j + 1]) : get_distance(tour[i], tour[i + X + 1]); // edge added after i
     double add2 = 0; // edge added after inserted Y block
-    if (Y != 0) add2 = j != i + X ? problem->get_distance(tour[j + Y], tour[i + X + 1]) : problem->get_distance(tour[j + Y], tour[i + 1]);
+    if (Y != 0) add2 = j != i + X ? get_distance(tour[j + Y], tour[i + X + 1]) : get_distance(tour[j + Y], tour[i + 1]);
     double add3 = 0; // edge added after j
 //    if (j != i + X) add3 = X != 0 ? get_distance(tour[j], tour[i + 1]) : get_distance(tour[j], tour[j + Y + 1]);
     if (j != i + X) {
         if (X != 0) {
-            add3 = problem->get_distance(tour[j], tour[i + 1]);
+            add3 = get_distance(tour[j], tour[i + 1]);
         } else {
-            if (j != last and j + Y != last) add3 = problem->get_distance(tour[j], tour[j + Y + 1]);
+            if (j != last and j + Y != last) add3 = get_distance(tour[j], tour[j + Y + 1]);
         }
     }
-    double add4 = (X != 0 and j + Y != last) ? problem->get_distance(tour[i + X], tour[j + Y + 1]) : 0; // edge added after inserted X block
+    double add4 = (X != 0 and j + Y != last) ? get_distance(tour[i + X], tour[j + Y + 1]) : 0; // edge added after inserted X block
 
     double added = add1 + add2 + add3 + add4;
 
@@ -121,7 +119,7 @@ double Operators::twoStringCostUpdate(vector<int> &tour, int i, int j, int X, in
 /*
  * Performs the 2-opt: reverses the order of the elements at positions i to j (both included)
  */
-void Operators::twoOptMove(vector<int> &tour, int i, int j) {
+void twoOptMove(vector<int> &tour, int i, int j) {
     std::reverse(tour.begin() + i, tour.begin() + j + 1);
 }
 
@@ -129,7 +127,7 @@ void Operators::twoOptMove(vector<int> &tour, int i, int j) {
  * Attempts to perform all possible 2-opt moves.
  * Returns true if the tour is improved
  */
-bool Operators::twoOpt(vector<int> &tour, bool firstImprove) {
+bool twoOpt(vector<int> &tour, bool firstImprove) {
     vector<int> tmpTour;
     vector<int> bestTour;
     tmpTour.reserve(tour.size());
@@ -137,9 +135,9 @@ bool Operators::twoOpt(vector<int> &tour, bool firstImprove) {
     bool improved = false;
     double impBest = EPS;
     for (int i = 1; i < tour.size() - 1; i++) {
-        if (problem->get_evals() > problem->STOP_CNT or (firstImprove and improved)) break;
+        if (get_evals() > STOP_CNT or (firstImprove and improved)) break;
         for (int j = i + 1; j < tour.size() - 1; j++) {
-            if (problem->get_evals() > problem->STOP_CNT or (firstImprove and improved)) break;
+            if (get_evals() > STOP_CNT or (firstImprove and improved)) break;
             // More efficient in terms of distance requests (validity check -> cost update)
 //            tmpTour = tour;
 //            twoOptMove(tmpTour, i, j);
@@ -156,7 +154,7 @@ bool Operators::twoOpt(vector<int> &tour, bool firstImprove) {
             if (impCurr > impBest) {
                 tmpTour = tour;
                 twoOptMove(tmpTour, i, j);
-                if (problem->isValidTour(tmpTour)) {
+                if (isValidTour(tmpTour)) {
                     impBest = impCurr;
                     bestTour = tmpTour;
                     improved = true;
@@ -171,17 +169,17 @@ bool Operators::twoOpt(vector<int> &tour, bool firstImprove) {
     return improved;
 }
 
-double Operators::triangle_adition(int afs, int b, int c){
-    return problem->get_distance(b, afs) + problem->get_distance(afs, c) - problem->get_distance(b, c);
+double triangle_adition(int afs, int b, int c){
+    return get_distance(b, afs) + get_distance(afs, c) - get_distance(b, c);
 }
 
-double Operators::triangle_adition2(int afs, int b, int c, double dist_bc){
-    return problem->get_distance(b, afs) + problem->get_distance(afs, c) - dist_bc;
+double triangle_adition2(int afs, int b, int c, double dist_bc){
+    return get_distance(b, afs) + get_distance(afs, c) - dist_bc;
 }
 
 
 //AFS reallocation for tour with more than one AFS
-double Operators::AFSrealoc_more(vector<int> &tour){
+double AFSrealoc_more(vector<int> &tour){
     //cout << "AFSrealoc more" << endl;
     //Basically just testing AFS allocation on reversed tour
     double tour_dist = 0;
@@ -193,7 +191,7 @@ double Operators::AFSrealoc_more(vector<int> &tour){
     int num_c_orig = 0;
     for(int i = (tour.size() - 1); i >= 0; i--){
         int node = tour.at(i);
-        if(!problem->is_charging_station(node)){
+        if(!is_charging_station(node)){
             r_tour.push_back(node);
             num_c_orig++;
         }
@@ -218,19 +216,19 @@ double Operators::AFSrealoc_more(vector<int> &tour){
     for(int i = 0; i < tour.size()-1; i++){
         int n1 = tour.at(i);
         int n2 = tour.at(i+1);
-        tour_dist += problem->get_distance(n1, n2);
+        tour_dist += get_distance(n1, n2);
     }
 
     for(int i = 0; i < f_tour.size()-1; i++){
         int n1 = f_tour.at(i);
         int n2 = f_tour.at(i+1);
-        f_tour_dist += problem->get_distance(n1, n2);
+        f_tour_dist += get_distance(n1, n2);
     }
 
     for(int i = 0; i < r_tour.size()-1; i++){
         int n1 = r_tour.at(i);
         int n2 = r_tour.at(i+1);
-        r_tour_dist += problem->get_distance(n1, n2);
+        r_tour_dist += get_distance(n1, n2);
     }
 
     int num_c_new = 0;
@@ -245,7 +243,7 @@ double Operators::AFSrealoc_more(vector<int> &tour){
 
         for(int i = 0; i < f_tour.size(); i++){
             int node = f_tour.at(i);
-            if(!problem->is_charging_station(node)){
+            if(!is_charging_station(node)){
                 num_c_new++;
             }
         }
@@ -267,7 +265,7 @@ double Operators::AFSrealoc_more(vector<int> &tour){
 
         for(int i = 0; i < r_tour.size(); i++){
             int node = r_tour.at(i);
-            if(!problem->is_charging_station(node)){
+            if(!is_charging_station(node)){
                 num_c_new++;
             }
         }
@@ -291,11 +289,11 @@ double Operators::AFSrealoc_more(vector<int> &tour){
 
 }
 
-bool Operators::lost_customers(vector<int> test_tour, int orig_number){
+bool lost_customers(vector<int> test_tour, int orig_number){
     int new_number = 0;
     for(int i = 0; i < test_tour.size(); i++){
         int node = test_tour.at(i);
-        if( !problem->is_charging_station(node)){
+        if( !is_charging_station(node)){
             new_number++;
         }
     }
@@ -311,7 +309,7 @@ bool Operators::lost_customers(vector<int> test_tour, int orig_number){
 //Tries to improve AFSs location for tours with one AFS
 //Returns the improvement value (positive)
 //Returns 0 if no improvement found
-double Operators::AFSrealoc_one_afs(vector<int> &tour, int original_afs_at){
+double AFSrealoc_one_afs(vector<int> &tour, int original_afs_at){
     //cout << "AFSrealoc one" << endl;
 
     //Compute additional distance created by the AFS in the path generated in front direction
@@ -328,7 +326,7 @@ double Operators::AFSrealoc_one_afs(vector<int> &tour, int original_afs_at){
     int n_of_cust_orig = 0;
     for(int i = (tour.size() - 1); i >= 0; i--){
         int node = tour.at(i);
-        if( !problem->is_charging_station(node)){
+        if( !is_charging_station(node)){
             r_tour.push_back(node);
             n_of_cust_orig++;
         }
@@ -348,7 +346,7 @@ double Operators::AFSrealoc_one_afs(vector<int> &tour, int original_afs_at){
     int n_of_front_afs = 0;
     for(int i = 1; i < f_tour.size() - 1; i++){
         int node = f_tour.at(i);
-        if(problem->is_charging_station(node)){
+        if(is_charging_station(node)){
             n_of_front_afs++;
             front_afs_at = i;
             //cout << "front node " << node <<" at " << i  << endl;
@@ -383,7 +381,7 @@ double Operators::AFSrealoc_one_afs(vector<int> &tour, int original_afs_at){
     int n_of_back_afs = 0;
     for(int i = 1; i < r_tour.size() - 1; i++){
         int node = r_tour.at(i);
-        if(problem->is_charging_station(node)){
+        if(is_charging_station(node)){
             n_of_back_afs++;
             back_afs_at = i;
             //*break;
@@ -508,11 +506,11 @@ double Operators::AFSrealoc_one_afs(vector<int> &tour, int original_afs_at){
     for(int i = front; i < back - 1; i++){
         double bi = clean_tour.at(i);
         double ci = clean_tour.at(i + 1);
-        double dist_bc = problem->get_distance(bi, ci);
+        double dist_bc = get_distance(bi, ci);
 
         //Triangular addition with potential AFS
-        for (int j = 0; j < problem->ACTUAL_PROBLEM_SIZE; j++) {
-            if (problem->is_charging_station(j)) {
+        for (int j = 0; j < actual_problem_size; j++) {
+            if (is_charging_station(j)) {
                 int p_afs = j;
                 double addi = triangle_adition2(p_afs, bi, ci, dist_bc);
                 if(addi < minAdd){
@@ -602,9 +600,9 @@ double Operators::AFSrealoc_one_afs(vector<int> &tour, int original_afs_at){
 //
 //firstImprove does nothing - for now
 //Could be improved, if we know where the depo is just for Charging and where it is for capacity
-bool Operators::AFSrealoc_common(vector<int> &tour, bool firstImprove, bool more_than_one){
+bool AFSrealoc_common(vector<int> &tour, bool firstImprove, bool more_than_one){
     //cout << "AFSrealoc common start."<< endl;
-    double evals_start = problem->get_evals();
+    double evals_start =get_evals();
     bool eval_ok = true;
 
     bool did_it_improve = false;
@@ -637,7 +635,7 @@ bool Operators::AFSrealoc_common(vector<int> &tour, bool firstImprove, bool more
         int afs_at = 0;
         for(int i = 1; i < st.size() - 1; i++){
             int node = st.at(i);
-            if(problem->is_charging_station(node)){
+            if(is_charging_station(node)){
                 n_of_afs++;
                 afs_at = i;
                 //cout << node << " ";
@@ -658,10 +656,10 @@ bool Operators::AFSrealoc_common(vector<int> &tour, bool firstImprove, bool more
     //create new vector of subtours (possibly) with modified subtours
     vector<vector<int>> subtours_new;
     for(int j = 0; j < subtours.size(); j++){
-        if(problem->get_evals() > problem->TERMINATION - 25){
+        if(get_evals() > termination - 25){
             eval_ok = false;
         }
-        //double evals_tmp = get_evals();
+        //double evals_tmp =get_evals();
         auto st = subtours.at(j);
         auto st_orig = subtours.at(j);
         int n_of_afs = sub_tour_afs_n.at(j);
@@ -708,7 +706,7 @@ bool Operators::AFSrealoc_common(vector<int> &tour, bool firstImprove, bool more
         }
 
         //if(max_ev < (get_evals() - evals_tmp)){
-        //    max_ev = get_evals() - evals_tmp;
+        //    max_ev =get_evals() - evals_tmp;
         //}
     }
 
@@ -734,22 +732,22 @@ bool Operators::AFSrealoc_common(vector<int> &tour, bool firstImprove, bool more
     }
 
     //if(more_than_one){
-    //    cout << "AFSrealoc more Evals used: " << get_evals() - evals_start << "  max: " << max_ev << endl;
+    //    cout << "AFSrealoc more Evals used: " <<get_evals() - evals_start << "  max: " << max_ev << endl;
     //}
     //else{
-    //    cout << "AFSrealoc one Evals used: " << get_evals() - evals_start << "  max: " << max_ev  << endl;
+    //    cout << "AFSrealoc one Evals used: " <<get_evals() - evals_start << "  max: " << max_ev  << endl;
     //}
     //cout << "AFS all total improvement " << total_improvement << endl;
     //cout << "AFSrealoc finished. Total improvement: " << total_improvement << endl;
     return did_it_improve;
 }
 
-bool Operators::AFSrealoc_one(vector<int> &tour, bool firstImprove){
+bool AFSrealoc_one(vector<int> &tour, bool firstImprove){
     //cout << "Out AFSrealoc _one" << endl;
     return AFSrealoc_common(tour, firstImprove, false);
 }
 
-bool Operators::AFSrealoc_more_than_one(vector<int> &tour, bool firstImprove){
+bool AFSrealoc_more_than_one(vector<int> &tour, bool firstImprove){
     // cout << "Out AFSrealoc _more" << endl;
     return AFSrealoc_common(tour, firstImprove, true);
 }
@@ -758,25 +756,26 @@ bool Operators::AFSrealoc_more_than_one(vector<int> &tour, bool firstImprove){
  * Returns tour fitness difference after performing twoOptMove(tour, i, j).
  * Positive value means fitness improvement.
  */
-double Operators::twoOptCostUpdate(vector<int> &tour, int i, int j) {
-    double cut1 = problem->get_distance(tour[i - 1], tour[i]); // cut before i
-    double cut2 = problem->get_distance(tour[j], tour[j + 1]); // cut after j
+double twoOptCostUpdate(vector<int> &tour, int i, int j) {
+    double cut1 = get_distance(tour[i - 1], tour[i]); // cut before i
+    double cut2 = get_distance(tour[j], tour[j + 1]); // cut after j
 
     double removed = cut1 + cut2;
 
-    double add1 = problem->get_distance(tour[i - 1], tour[j]); // edge added after i - 1
-    double add2 = problem->get_distance(tour[i], tour[j + 1]); // edge added before j + 1
+    double add1 = get_distance(tour[i - 1], tour[j]); // edge added after i - 1
+    double add2 = get_distance(tour[i], tour[j + 1]); // edge added before j + 1
 
     double added = add1 + add2;
 
 
     return removed - added;
 }
+
 /*
  * Non-capacitated zga for subtours with one AFS
  * Adds AFSs
  */
-vector<int> Operators::tsp2evrp_zga_mini(vector<int> tspTour) {
+vector<int> tsp2evrp_zga_mini(vector<int> tspTour) {
     vector<int> evrpTour;
 
     int nextId = 0; // index of the next customer in the tspTour
@@ -791,10 +790,10 @@ vector<int> Operators::tsp2evrp_zga_mini(vector<int> tspTour) {
     while (nextId != tspTour.size()) {
             // (3) Can return to the closest AFS via the next customer? -> YES
             // NOTE: CHANGE TO ZGA
-            int closestAFSToGoal = problem->getClosestAFS(tspTour[nextId]);
-            double remainingBattery = problem->getRemainingBattery(evrpTour);
-            double energyToNext = problem->get_energy_consumption(evrpTour.back(), tspTour[nextId]);
-            double nextToAFS = problem->get_energy_consumption(tspTour[nextId], closestAFSToGoal);
+            int closestAFSToGoal = getClosestAFS(tspTour[nextId]);
+            double remainingBattery = getRemainingBattery(evrpTour);
+            double energyToNext = get_energy_consumption(evrpTour.back(), tspTour[nextId]);
+            double nextToAFS = get_energy_consumption(tspTour[nextId], closestAFSToGoal);
             if (remainingBattery - energyToNext >= nextToAFS) {
                 evrpTour.push_back(tspTour[nextId]);
                 nextId++;
@@ -803,8 +802,8 @@ vector<int> Operators::tsp2evrp_zga_mini(vector<int> tspTour) {
             } else {
                 // (4) Can reach nearest AFS? -> NO
                 // NOTE: this can be optimized, too...
-                int closestAFS = problem->getReachableAFSClosestToGoal(evrpTour.back(), tspTour[nextId], problem->getRemainingBattery(evrpTour));
-                bool canReach = problem->getRemainingBattery(evrpTour) - problem->get_energy_consumption(evrpTour.back(), closestAFS) >= 0;
+                int closestAFS = getReachableAFSClosestToGoal(evrpTour.back(), tspTour[nextId], getRemainingBattery(evrpTour));
+                bool canReach = getRemainingBattery(evrpTour) - get_energy_consumption(evrpTour.back(), closestAFS) >= 0;
                 assert(canReach);
                 // (4) Can reach nearest AFS? -> YES
                 evrpTour.push_back(closestAFS);
@@ -819,7 +818,7 @@ vector<int> Operators::tsp2evrp_zga_mini(vector<int> tspTour) {
 
     return evrpTour;
 }
-bool Operators::addAndCheckLastN(int node, bool reset) {
+bool addAndCheckLastN(int node, bool reset) {
 
     //N is 4
     static int lastN[4];
@@ -854,109 +853,69 @@ bool Operators::addAndCheckLastN(int node, bool reset) {
         return false;
     }
 }
-bool Operators::get_to_depot_possibly_through_afss(vector<int> &evrpTour) {
-    bool canReachDepot = problem->getRemainingBattery(evrpTour) - problem->get_energy_consumption(evrpTour.back(), 0) >= 0;
+
+bool get_to_depot_possibly_through_afss(vector<int> &evrpTour) {
+    bool canReachDepot = getRemainingBattery(evrpTour) - get_energy_consumption(evrpTour.back(), 0) >= 0;
     if (canReachDepot) {
         evrpTour.push_back(0);
     } else {
         // NOTE: can be optimized
-        int closestAFS = problem->getClosestAFS(evrpTour.back());
-        fw.planPaths();
-        vector<int> afsSubpath = fw.getPath(problem->afsIdMap[closestAFS], problem->afsIdMap[0], true);
+        int closestAFS = getClosestAFS(evrpTour.back());
+        vector<int> afsSubpath = fw.getPath(afsIdMap[closestAFS], afsIdMap[0], true);
         evrpTour.insert(evrpTour.end(), afsSubpath.begin(), afsSubpath.end());
     }
     return addAndCheckLastN(0);
 }
 
 /*
- * This constructor initializes the planning graph from global list AFSs.
+ * Generate a valid E-VRP tour from a given TSP tour over customers only.
+ * Based on Zhang, Gajpal and Appadoo (2017) - relaxed to allow routes to depot via AFS
  */
-floydWarshall::floydWarshall(int nV) : nV(nV) {
-    next = vector<vector<int>>(nV, vector<int>(nV, -1));
-    dist = vector<vector<int>>(nV, vector<int>(nV, INF));
-    for (int i = 0; i < nV; i++) {
-        for (int j = i; j < nV; j++) {
-            if (i == j) {
-                dist[i][j] = 0;
-                next[i][j] = j;
+vector<int> tsp2evrp_zga_relaxed(vector<int> tspTour) {
+    vector<int> evrpTour;
+    int nextId = 0; // index of the next customer in the tspTour
+
+    // Start at depot
+    evrpTour.push_back(0);
+
+    //bool satisfiable = false;
+    // (1) All customers served? -> NO
+    while (nextId != tspTour.size()) {
+        // (2) Next customer satisfiable? -> NO
+        if (getRemainingLoad(evrpTour) < get_customer_demand(tspTour[nextId])) {
+            // NOTE: CHANGE TO ZGA
+            bool check = get_to_depot_possibly_through_afss(evrpTour);
+            if (!check) break;
+            // (2) Next customer satisfiable? -> YES
+        } else {
+            // (3) Can return to the closest AFS via the next customer? -> YES
+            // NOTE: CHANGE TO ZGA
+            int closestAFSToGoal = getClosestAFS(tspTour[nextId]);
+            double remainingBattery = getRemainingBattery(evrpTour);
+            double energyToNext = get_energy_consumption(evrpTour.back(), tspTour[nextId]);
+            double nextToAFS = get_energy_consumption(tspTour[nextId], closestAFSToGoal);
+            if (remainingBattery - energyToNext >= nextToAFS) {
+                evrpTour.push_back(tspTour[nextId]);
+                nextId++;
+                if (!addAndCheckLastN(nextId - 1)) break;
+                // (3) Can return to the closest AFS via the next customer? -> NO
             } else {
-                int start = problem->AFs[i];
-                int goal = problem->AFs[j];
-                double consumption = problem->get_energy_consumption(start, goal);
-                problem->get_distance(start, goal); // Called here just to increase evals, so that the usage is 100% legal
-                if (consumption <= problem->BATTERY_CAPACITY) {
-                    dist[i][j] = consumption;
-                    dist[j][i] = consumption;
-                    next[i][j] = j;
-                    next[j][i] = i;
-                }
+                // (4) Can reach nearest AFS? -> NO
+                // NOTE: this can be optimized, too...
+                int closestAFS = getReachableAFSClosestToGoal(evrpTour.back(), tspTour[nextId], getRemainingBattery(evrpTour));
+                bool canReach = getRemainingBattery(evrpTour) - get_energy_consumption(evrpTour.back(), closestAFS) >= 0;
+                assert(canReach);
+                // (4) Can reach nearest AFS? -> YES
+                evrpTour.push_back(closestAFS);
+                if (!addAndCheckLastN(closestAFS)) break;
             }
         }
     }
+    // (1) All customers served? -> YES
+    get_to_depot_possibly_through_afss(evrpTour);
+    return evrpTour;
 }
-
-/*
- * This constructor can be used for initialization by any graph.
- */
-floydWarshall::floydWarshall(vector<vector<int>> &graph) : dist(graph) {
-    next = vector<vector<int>>(nV, vector<int>(nV, -1));
-    nV = graph.size();
-    for (int i = 0; i < nV; i++) {
-        for (int j = 0; j < nV; j++) {
-            next[i][j] = j;
-        }
-    }
-}
-
-/*
- * Plans all pairs of shortest paths, run just once.
- */
-void floydWarshall::planPaths() {
-    int i, j, k;
-    for (k = 0; k < nV; k++) {
-        for (i = 0; i < nV; i++) {
-            for (j = 0; j < nV; j++) {
-                if (dist[i][k] + dist[k][j] < dist[i][j]) {
-                    dist[i][j] = dist[i][k] + dist[k][j];
-                    next[i][j] = next[i][k];
-                }
-            }
-        }
-    }
-}
-
-void floydWarshall::printMatrix(vector<vector<int>> &matrix) {
-    for (auto i = 0; i < nV; i++) {
-        for (auto j = 0; j < nV; j++) {
-            cout << matrix[i][j] << " ";
-        }
-        cout << endl;
-    }
-}
-
-/*
- * Returns shortest path from u to v.
- * If afsIds = true, returns AFS ids as stored in the global AFSs vector, otherwise returns internal ids used by the floydWarshall instance.
- */
-vector<int> floydWarshall::getPath(int u, int v, bool afsIds) {
-    vector<int> path;
-    if (next[u][v] == -1) {
-        return path;
-    }
-    path.push_back(u);
-    while (u != v) {
-        u = next[u][v];
-        path.push_back(u);
-    }
-    if (afsIds) {
-        for (auto &n:path) {
-            n = problem->AFs[n];
-        }
-    }
-
-    return path;
-}
-void Operators::generalizedDoubleBridge(vector<int> &tour, unsigned p) {
+void generalizedDoubleBridge(vector<int> &tour, unsigned p) {
     auto n = tour.size();
     p = (p + 1 > n) ? n - 1 : p;
 
@@ -965,7 +924,6 @@ void Operators::generalizedDoubleBridge(vector<int> &tour, unsigned p) {
     default_random_engine generator(rand());
     auto distribution = uniform_int_distribution<int>(0,n-2);
     std::vector<bool> throwsBool(n, false);
-
     for (unsigned i = 0; i < p; ++i) {
         int throwI;
         do {
@@ -973,6 +931,13 @@ void Operators::generalizedDoubleBridge(vector<int> &tour, unsigned p) {
         } while (throwsBool[throwI]);
         throwsBool[throwI] = true;
     }
+
+    /// Then split the path to (p + 1) strings :
+    ///     pathStrings[0]: < 0, 1, ... , throw(1) >,
+    ///     pathStrings[1]: < throw(1) + 1, ... , throw(2) >
+    ///     ...
+    ///     pathStrings[p - 1]: < throw(p - 1) + 1, ... , throw(p) >,
+    ///     pathStrings[p]: < throw(p) + 1, ... , n >
     std::vector<std::vector<int>> pathStrings{}; // these are indices
     for (unsigned i = 0; i < n; ++i) {
         std::vector<int> pathString{};
@@ -982,7 +947,7 @@ void Operators::generalizedDoubleBridge(vector<int> &tour, unsigned p) {
         pathString.emplace_back(i);
         pathStrings.push_back(pathString);
     }
-    
+
     /// Create new path that starts with the first string.
     std::vector<int> newPositions(pathStrings[0]);
 
@@ -1014,83 +979,19 @@ void Operators::generalizedDoubleBridge(vector<int> &tour, unsigned p) {
             }
         }
     }
-cout<<"Begin 1"<<endl;
+
     /// Now get the path's vertices.
     std::vector<int> newPath(n);
     for (unsigned j = 0; j < n; ++j) {
         newPath[j] = tour[newPositions[j]];
     }
 
-cout<<"end 1"<<endl;
 
     // Fix the perturbed tour
     newPath = tsp2evrp_zga_relaxed(newPath);
-    cout<<"end 2"<<endl;
     mergeAFSs(newPath);
-cout<<"end 3"<<endl;
+
     tour = newPath;
-    cout<<"end 4"<<endl;
-    
 }
-/*
- * Sequentially traverses tour and removes neighboring indentical nodes.
- */
-void Operators::mergeAFSs(vector<int> &tour) {
-    int i = 0;
-    while (i != tour.size() - 1) {
-        if (tour[i] == tour[i+1]) { // remove element at index i+1
-            tour.erase(tour.begin() + i + 1);
-        } else {
-            i++;
-        }
-    }
-}
-
-vector<int> Operators::tsp2evrp_zga_relaxed(vector<int> tspTour) {
-    vector<int> evrpTour;
-    int nextId = 0; // index of the next customer in the tspTour
-
-    // Start at depot
-    evrpTour.push_back(0);
-
-    //bool satisfiable = false;
-    // (1) All customers served? -> NO
-    while (nextId != tspTour.size()) {
-        // (2) Next customer satisfiable? -> NO
-        if (problem->getRemainingLoad(evrpTour) < problem->get_customer_demand(tspTour[nextId])) {
-            // NOTE: CHANGE TO ZGA
-            bool check = get_to_depot_possibly_through_afss(evrpTour);
-            if (!check) break;
-            // (2) Next customer satisfiable? -> YES
-        } else {
-            // (3) Can return to the closest AFS via the next customer? -> YES
-            // NOTE: CHANGE TO ZGA
-            int closestAFSToGoal = problem->getClosestAFS(tspTour[nextId]);
-            double remainingBattery = problem->getRemainingBattery(evrpTour);
-            double energyToNext = problem->get_energy_consumption(evrpTour.back(), tspTour[nextId]);
-            double nextToAFS = problem->get_energy_consumption(tspTour[nextId], closestAFSToGoal);
-            if (remainingBattery - energyToNext >= nextToAFS) {
-                evrpTour.push_back(tspTour[nextId]);
-                nextId++;
-                if (!addAndCheckLastN(nextId - 1)) break;
-                // (3) Can return to the closest AFS via the next customer? -> NO
-            } else {
-                // (4) Can reach nearest AFS? -> NO
-                // NOTE: this can be optimized, too...
-                int closestAFS = problem->getReachableAFSClosestToGoal(evrpTour.back(), tspTour[nextId], problem->getRemainingBattery(evrpTour));
-                bool canReach = problem->getRemainingBattery(evrpTour) - problem->get_energy_consumption(evrpTour.back(), closestAFS) >= 0;
-                assert(canReach);
-                // (4) Can reach nearest AFS? -> YES
-                evrpTour.push_back(closestAFS);
-                if (!addAndCheckLastN(closestAFS)) break;
-            }
-        }
-    }
-    // (1) All customers served? -> YES
-    get_to_depot_possibly_through_afss(evrpTour);
-    return evrpTour;
-}
-
-
 
 

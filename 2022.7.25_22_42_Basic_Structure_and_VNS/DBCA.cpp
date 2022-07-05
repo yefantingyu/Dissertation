@@ -6,7 +6,7 @@
 #include <algorithm>
 
 vector<vector<vector<int>>> DBCA::generated_dbca_parameter(){
-    double reach  = problem->BATTERY_CAPACITY / problem->energy_consumption;
+    double reach  = battery_capacity / energy_consumption_rate;
     //Init density tresholds (minimal radius to connect a cluster)
     vector<double> epss;
     //Minimal number of neigbouring points for a cluster core
@@ -33,14 +33,14 @@ vector<vector<vector<int>>> DBCA::generated_dbca_parameter(){
         double eps = epss.at(x);
         //cout << "////////////////////////////////////////" << endl;
         // cout << endl << "Eps: " << eps << endl;
-        dbca_Point points_base[problem->ACTUAL_PROBLEM_SIZE];
+        dbca_Point points_base[actual_problem_size];
 
         //Determine neighbours for each vertex
-        for(int i = 0; i < problem->ACTUAL_PROBLEM_SIZE; i++) {
+        for(int i = 0; i < actual_problem_size; i++) {
             points_base[i].cluster_ID = dbca_NOT_CLASSIFIED;
-            for(int j = 0; j < problem->ACTUAL_PROBLEM_SIZE; j++) {
+            for(int j = 0; j < actual_problem_size; j++) {
                 if(i == j) continue;
-                if(problem->get_distance(i, j) <= eps) {
+                if(get_distance(i, j) <= eps) {
                     points_base[i].neighbours_count++;
                     points_base[i].adjacentPoints.push_back(j);
                 }
@@ -60,12 +60,12 @@ vector<vector<vector<int>>> DBCA::generated_dbca_parameter(){
             //Copy the computed point descriptors, so we dont have to compute them again
             vector<dbca_Point> points;
             vector<vector<int>> cluster_set;
-            for(int i = 0; i < problem->ACTUAL_PROBLEM_SIZE; i++) {
+            for(int i = 0; i < actual_problem_size; i++) {
                 points.push_back(points_base[i]);
             }
 
             //Classify vertices in clusters
-            for(int i = 0; i < problem->ACTUAL_PROBLEM_SIZE; i++) {
+            for(int i = 0; i < actual_problem_size; i++) {
                 //Skip if the point is already clasified
                 if(points.at(i).cluster_ID != dbca_NOT_CLASSIFIED) continue;
                 
@@ -84,17 +84,17 @@ vector<vector<vector<int>>> DBCA::generated_dbca_parameter(){
             }
 
             //cout << endl << "dbca_OUTLIER sorting" << endl;
-            for(int i = 0; i < problem->ACTUAL_PROBLEM_SIZE; i++) {
+            for(int i = 0; i < actual_problem_size; i++) {
                 if(points.at(i).cluster_ID != dbca_OUTLIER) continue;
 
                 double minDist = DBL_MAX;
                 int min_node_id = - 2;
 
-                for(int j = 0; j < problem->ACTUAL_PROBLEM_SIZE; j++) {
+                for(int j = 0; j < actual_problem_size; j++) {
                     if(i == j) continue;
                     if(points.at(j).cluster_ID == dbca_OUTLIER) continue;
 
-                    double dist = problem->get_distance(i, j);
+                    double dist = get_distance(i, j);
                     if(dist < minDist){
                         minDist = dist;
                         min_node_id = j;
@@ -114,7 +114,7 @@ vector<vector<vector<int>>> DBCA::generated_dbca_parameter(){
 
             //Get a vector of clusters
             cluster_set.resize(cluster_idx + 1);
-            for(int i = 0; i < problem->ACTUAL_PROBLEM_SIZE; i++) {
+            for(int i = 0; i < actual_problem_size; i++) {
                 if(points.at(i).cluster_ID != dbca_OUTLIER) {
                     cluster_set[points.at(i).cluster_ID].push_back(i);
                 }
@@ -126,7 +126,7 @@ vector<vector<vector<int>>> DBCA::generated_dbca_parameter(){
                 bool has_customer = false;
                 for(auto& next:cluster_set.at(i)){
                 //    cout << (next) << " " ;
-                    if(!problem->is_charging_station(next)){
+                    if(!is_charging_station(next)){
                         has_customer = true;
                     }
                 }
@@ -146,14 +146,14 @@ vector<vector<vector<int>>> DBCA::generated_dbca_parameter(){
                 bool has_depo = false;
                 for(auto& next:cluster_set.at(i)){
                 //    cout << (next) << " " ;
-                    if(next == problem->DEPOT){
+                    if(next == DEPOT){
                         has_depo = true;
                     }
                 }
 
                 //If the cluster doesnt have depot, add it
                 if(!has_depo){
-                    cluster_set.at(i).push_back(problem->DEPOT);
+                    cluster_set.at(i).push_back(DEPOT);
                 }
                 //cout << endl;
             }
@@ -250,7 +250,7 @@ vector<int> DBCA::generate_initial_solution(){
     double minEval = DBL_MAX;
     vector<int> bestTour;
     for(auto& tour:evrp_tours){
-        double eval = problem->fitness_evaluation(tour);
+        double eval = fitness_evaluation(tour);
         if(eval < minEval){
             minEval = eval;
             bestTour = tour;
@@ -274,14 +274,14 @@ vector<int> DBCA::clarke_wright(bool capacitated, bool clusters, vector<int> nod
     //Compute on separate cluster of customer nodes
     if (clusters){
         for (int node:node_list) {
-            if (!problem->is_charging_station(node)) {
+            if (!is_charging_station(node)) {
                 unusedCustomers.insert(node);
             }
         }
     }else {
         //Compute on all customer nodes
-        for (int i = 0; i < problem->ACTUAL_PROBLEM_SIZE; i++) {
-            if (!problem->is_charging_station(i)) {
+        for (int i = 0; i < actual_problem_size; i++) {
+            if (!is_charging_station(i)) {
                 unusedCustomers.insert(i);
             }
         }
@@ -292,20 +292,20 @@ vector<int> DBCA::clarke_wright(bool capacitated, bool clusters, vector<int> nod
 
     while(unusedCustomers.size() > 0){
         vector<int> subtour;
-        int remaining_capacity = problem->MAX_CAPACITY;
+        int remaining_capacity = vehicle_capacity;
         double length = 0;
         //get the one furthest from depo from the remaining customers
         auto maxDist = 0;
         int furthest;
         for (int cand:unusedCustomers){
-            double dist = problem->get_distance(0, cand);
+            double dist = get_distance(0, cand);
             if (dist > maxDist){
                 maxDist = dist;
                 furthest = cand;
             }
         }
         subtour.push_back(furthest);
-        remaining_capacity -= problem->get_customer_demand(furthest);
+        remaining_capacity -= get_customer_demand(furthest);
         unusedCustomers.erase(furthest);
 
         double dist_front = maxDist;
@@ -328,7 +328,7 @@ vector<int> DBCA::clarke_wright(bool capacitated, bool clusters, vector<int> nod
             double dist_to_depo;
 
             for (int cand:unusedCustomers){
-                if((problem->get_customer_demand(cand) <= remaining_capacity ) || !capacitated){
+                if((get_customer_demand(cand) <= remaining_capacity ) || !capacitated){
                     enough_capacity = true;
                     //double dist_front = get_distance(front, cand);
                     //double dist_back = get_distance(back, cand);
@@ -337,11 +337,11 @@ vector<int> DBCA::clarke_wright(bool capacitated, bool clusters, vector<int> nod
                     //dist saved = ( new distance ) - ( original distance )
                     //original distance = distance( original -> depo + depo -> candidate + candidate -> depo)
                     //new distance = distance( original -> candiate -> depo)
-                    double dist_candidate_depo = problem->get_distance(0, cand);
+                    double dist_candidate_depo = get_distance(0, cand);
 
 
-                    double dist_saved_front = problem->get_distance(front, cand) - dist_candidate_depo - dist_front;
-                    double dist_saved_back = problem->get_distance(back, cand) - dist_candidate_depo - dist_back;
+                    double dist_saved_front = get_distance(front, cand) - dist_candidate_depo - dist_front;
+                    double dist_saved_back = get_distance(back, cand) - dist_candidate_depo - dist_back;
 
                     if (dist_saved_front < distImprovement){
                         at_front = true;
@@ -380,7 +380,7 @@ vector<int> DBCA::clarke_wright(bool capacitated, bool clusters, vector<int> nod
 
 
             //pairs.push_back(neigbour, closest);
-            remaining_capacity -= problem->get_customer_demand(closest);
+            remaining_capacity -= get_customer_demand(closest);
             unusedCustomers.erase(closest);
 
             if(unusedCustomers.size() == 0){
@@ -423,37 +423,86 @@ vector<int> DBCA::tsp2evrp_zga_relaxed(vector<int> tspTour) {
     // (1) All customers served? -> NO
     while (nextId != tspTour.size()) {
         // (2) Next customer satisfiable? -> NO
-        if (problem->getRemainingLoad(evrpTour) < problem->get_customer_demand(tspTour[nextId])) {
+        if (getRemainingLoad(evrpTour) < get_customer_demand(tspTour[nextId])) {
             // NOTE: CHANGE TO ZGA
-            bool check = operatort.get_to_depot_possibly_through_afss(evrpTour);
+            bool check = get_to_depot_possibly_through_afss(evrpTour);
             if (!check) break;
             // (2) Next customer satisfiable? -> YES
         } else {
             // (3) Can return to the closest AFS via the next customer? -> YES
             // NOTE: CHANGE TO ZGA
-            int closestAFSToGoal = problem->getClosestAFS(tspTour[nextId]);
-            double remainingBattery = problem->getRemainingBattery(evrpTour);
-            double energyToNext = problem->get_energy_consumption(evrpTour.back(), tspTour[nextId]);
-            double nextToAFS = problem->get_energy_consumption(tspTour[nextId], closestAFSToGoal);
+            int closestAFSToGoal = getClosestAFS(tspTour[nextId]);
+            double remainingBattery = getRemainingBattery(evrpTour);
+            double energyToNext = get_energy_consumption(evrpTour.back(), tspTour[nextId]);
+            double nextToAFS = get_energy_consumption(tspTour[nextId], closestAFSToGoal);
             if (remainingBattery - energyToNext >= nextToAFS) {
                 evrpTour.push_back(tspTour[nextId]);
                 nextId++;
-                if (!operatort.addAndCheckLastN(nextId - 1)) break;
+                if (!addAndCheckLastN(nextId - 1)) break;
                 // (3) Can return to the closest AFS via the next customer? -> NO
             } else {
                 // (4) Can reach nearest AFS? -> NO
                 // NOTE: this can be optimized, too...
-                int closestAFS = problem->getReachableAFSClosestToGoal(evrpTour.back(), tspTour[nextId], problem->getRemainingBattery(evrpTour));
-                bool canReach = problem->getRemainingBattery(evrpTour) - problem->get_energy_consumption(evrpTour.back(), closestAFS) >= 0;
+                int closestAFS = getReachableAFSClosestToGoal(evrpTour.back(), tspTour[nextId], getRemainingBattery(evrpTour));
+                bool canReach = getRemainingBattery(evrpTour) - get_energy_consumption(evrpTour.back(), closestAFS) >= 0;
                 assert(canReach);
                 // (4) Can reach nearest AFS? -> YES
                 evrpTour.push_back(closestAFS);
-                if (!operatort.addAndCheckLastN(closestAFS)) break;
+                if (!addAndCheckLastN(closestAFS)) break;
             }
         }
     }
     // (1) All customers served? -> YES
-    operatort.get_to_depot_possibly_through_afss(evrpTour);
+    get_to_depot_possibly_through_afss(evrpTour);
     return evrpTour;
+}
+
+bool DBCA::get_to_depot_possibly_through_afss(vector<int> &evrpTour){
+    bool canReachDepot = getRemainingBattery(evrpTour) - get_energy_consumption(evrpTour.back(), 0) >= 0;
+    if (canReachDepot) {
+        evrpTour.push_back(0);
+    } else {
+        // NOTE: can be optimized
+        int closestAFS = getClosestAFS(evrpTour.back());
+        fw.planPaths();
+        vector<int> afsSubpath = fw.getPath(afsIdMap[closestAFS], afsIdMap[0], true);
+        evrpTour.insert(evrpTour.end(), afsSubpath.begin(), afsSubpath.end());
+    }
+    return addAndCheckLastN(0);
+}
+bool DBCA::addAndCheckLastN(int node, bool reset) {
+
+    //N is 4
+    static int lastN[4];
+    static int nextLastNIndex = 0;
+    static int counter = 0;
+    if (reset) {
+        for (int i = 0; i < 4; i++) {
+            lastN[i] = -1;
+        }
+        counter = 0;
+    }
+
+    counter++;
+    bool check = true;
+    if (counter > 4) {
+        check = false;
+        for (int i = 0; i < 2; i++) {
+            int index1 = i % 4;
+            int index2 = (i + 2) % 4;
+            if (lastN[index1] != lastN[index2]) {
+                check = true;
+                break;
+            }
+        }
+    }
+    if (check) {
+        lastN[nextLastNIndex] = node;
+        nextLastNIndex = (nextLastNIndex + 1) % 4;
+        return true;
+    } else {
+        cout << "cycle detected: " << lastN[0] << ", " << lastN[1] << ", " << lastN[2] << ", " << lastN[3] << endl;
+        return false;
+    }
 }
 

@@ -1,0 +1,4 @@
+E-n22-k4.evrp
+Max_trails: 1
+Max_iteration_base: 2500
+restart_ratio: 0.35
