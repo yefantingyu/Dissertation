@@ -1,0 +1,7 @@
+E-n22-k4.evrp
+Max_Trials: 20
+Max_trial_base: 1000
+alpha: 1.0
+beta: 2.0
+rho: 0.1
+ras_ranks: 6
